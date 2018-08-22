@@ -81,6 +81,8 @@ extern char *strsep(char **, const char *);
 #define PT_PGM		14	/* [UDP-encapsulated] Pragmatic General Multicast */
 #define PT_PGM_ZMTP1	15	/* ZMTP/1.0 inside PGM (native or UDP-encapsulated) */
 #define PT_LMP		16	/* Link Management Protocol */
+#define PT_DSA		17	/* Distributed Switch Architecture */
+#define PT_DSA_RT	18	/* DSA with router header */
 
 #define ESRC(ep) ((ep)->ether_shost)
 #define EDST(ep) ((ep)->ether_dhost)
@@ -188,7 +190,6 @@ extern void bpf_dump(const struct bpf_program *, int);
 
 #ifndef NETDISSECT_REWORKED
 extern netdissect_options *gndo;
-
 #define bflag gndo->ndo_bflag
 #define eflag gndo->ndo_eflag
 #define fflag gndo->ndo_fflag

@@ -25,12 +25,19 @@
 #endif
 
 #include <tcpdump-stdinc.h>
+#include <stdlib.h>
 
 #include "interface.h"
 #include "extract.h"
 #include "addrtoname.h"
 #include "ethertype.h"
 #include "ether.h"
+
+#define DSA_HDRLEN     16
+#define DSA_TO_CPU     0
+#define DSA_FROM_CPU   1
+#define DSA_TO_SNIFFER 2
+#define DSA_FORWARD    3
 
 const struct tok ethertype_values[] = {
     { ETHERTYPE_IP,		"IPv4" },
@@ -83,8 +90,194 @@ const struct tok ethertype_values[] = {
     { ETHERTYPE_GEONET,         "GeoNet"},
     { ETHERTYPE_CALM_FAST,      "CALM FAST"},
     { ETHERTYPE_AOE,            "AoE" },
+    { ETHERTYPE_DSA,            "DSA" },
     { 0, NULL}
 };
+
+static const char *
+code_name(uint8_t code)
+{
+	static const char *codes[] = {
+		"t,bdpu",
+		"r,frame2reg",
+		"t,igmp",
+		"t,policy",
+		"m,arp",
+		"m,policy",
+		"UNKNOWN",
+		"UNKNOWN",
+	};
+
+	return codes[code];
+}
+
+typedef struct {
+	u_int8_t code;
+	const char *name;
+} lcode_t;
+
+int lcode_cmp(const lcode_t *a, const lcode_t *b)
+{
+	return a->code - b->code;
+}
+
+static const char *
+lcode_name(uint8_t code)
+{
+	static const lcode_t long_codes[] = {
+		{   2, "t,bpdu" },
+		{   3, "tm,fdb" },
+		{   5, "tm,arp-bc" },
+		{   6, "tm,ipv4-igmp" },
+		{   8, "t,unk-src-mac" },
+		{  10, "m,unk-src-mac" },
+		{  13, "tm,ieee-mc-0" },
+		{  14, "tm,ipv6-icmp" },
+		{  16, "tm,link-local-mc-0" },
+		{  17, "m,ripv1" },
+		{  18, "tm,ipv6-nb-sol" },
+		{  19, "tm,ipv4-bc" },
+		{  20, "tm,!ipv4-bc" },
+		{  21, "tm,prop-mc" },
+		{  22, "tm,br-!ip-unk-mc" },
+		{  23, "tm,br-ipv4-unk-mc" },
+		{  24, "tm,br-ipv6-unk-mc" },
+		{  25, "tm,br-unk-uc" },
+		{  26, "tm,ieee-mc-1" },
+		{  27, "tm,ieee-mc-2" },
+		{  28, "tm,ieee-mc-3" },
+		{  29, "tm,link-local-mc-1" },
+		{  30, "tm,link-local-mc-2" },
+		{  31, "tm,link-local-mc-3" },
+		{  32, "tm,udp-bc-0" },
+		{  33, "tm,udp-bc-1" },
+		{  34, "tm,udp-bc-2" },
+		{  35, "tm,udp-bc-3" },
+		{  36, "t,sec-learn-unk-src" },
+		{  64, "f,rt-packet" },
+		{  65, "f,br-packet" },
+		{  66, "m,sniffer-ingress" },
+		{  67, "m,sniffer-egress" },
+		{  68, "x,cpu-mail" },
+		{  69, "x,cpu-to-cpu" },
+		{  70, "m,sampled-egress" },
+		{  71, "m,sampled-ingress" },
+		{  74, "tm,inv-user-bytes" },
+		{  75, "t,tt-ipv4-hdr-err" },
+		{  76, "t,tt-ipv4-frag-err" },
+		{  77, "t,tt-ipv4-gre-err" },
+		{  79, "t,mpls-hdr-err" },
+		{  80, "t,mpls-lsr-ttl-err" },
+		{  83, "t,oam-pdu" },
+		{ 133, "tm,rt-ipv4-ttl-err" },
+		{ 134, "tm,rt-ipv6-mtu-err" },
+		{ 135, "tm,rt-ipv6-hop-err" },
+		{ 136, "tm,rt-ip-addr-err" },
+		{ 137, "tm,rt-ipv4-hdr-err" },
+		{ 138, "tm,rt-ip-dip-da-err" },
+		{ 139, "tm,rt-ipv6-hdr-err" },
+		{ 140, "tm,rt-ip-uc-sip-sa-err" },
+		{ 141, "tm,rt-ipv4-opt" },
+		{ 142, "tm,rt-ipv6-!hbh-opt" },
+		{ 143, "tm,rt-ipv6-hbh-opt" },
+		{ 159, "tm,rt-ipv6-scope" },
+		{ 160, "tm,rt-ipv4-uc-0" },
+		{ 161, "tm,rt-ipv4-uc-1" },
+		{ 162, "tm,rt-ipv4-uc-2" },
+		{ 163, "tm,rt-ipv4-uc-3" },
+		{ 164, "tm,rt-ipv4-mc-0" },
+		{ 165, "tm,rt-ipv4-mc-1" },
+		{ 166, "tm,rt-ipv4-mc-2" },
+		{ 167, "tm,rt-ipv4-mc-3" },
+		{ 168, "tm,rt-ipv6-uc-0" },
+		{ 169, "tm,rt-ipv6-uc-1" },
+		{ 170, "tm,rt-ipv6-uc-2" },
+		{ 171, "tm,rt-ipv6-uc-3" },
+		{ 172, "tm,rt-ipv6-mc-0" },
+		{ 173, "tm,rt-ipv6-mc-1" },
+		{ 174, "tm,rt-ipv6-mc-2" },
+		{ 175, "tm,rt-ipv6-mc-3" },
+		{ 176, "tm,rt-ip-uc-rpf" },
+		{ 177, "tm,rt-ip-mc-rt-rpf" },
+		{ 178, "tm,rt-ip-mc-mll-rpf" },
+		{ 179, "tm,arp-bc-to-me" },
+		{ 180, "m,rt-ipv4-uc-icmp-redir" },
+		{ 181, "m,rt-ipv6-uc-icmp-redir" },
+		{ 188, "f,arp-reply-to-me" },
+		{ 189, "x,cpu-to-all-cpus" },
+		{ 190, "tmf,tcp-syn-to-cpu" },
+		{ 191, "t,virtual-rt" }
+	};
+	lcode_t key = { .code = code };
+	lcode_t *known;
+
+	if (code >= 192)
+		return "tmf,user";
+
+	known = bsearch(&key, long_codes, sizeof(long_codes)/sizeof(lcode_t),
+			sizeof(lcode_t), (__compar_fn_t)lcode_cmp);
+	if (known)
+		return known->name;
+
+	return "RESERVED";
+}
+
+static void
+dsa_print(netdissect_options *ndo, uint32_t tag, uint32_t *etag)
+{
+	uint8_t port;
+
+	if (ndo->ndo_vflag >= 2) {
+		ND_PRINT((ndo, "[%8.8x%s%c", tag, etag? "" : "]", etag? '-' : ' '));
+
+		if (etag)
+			ND_PRINT((ndo, "%8.8x] ", *etag));
+	}
+
+	port = (tag >> 19) & 0x1f;
+
+	switch (tag >> 30) {
+	case DSA_TO_CPU:
+		ND_PRINT((ndo, "  to_cpu"));
+
+		if (ndo->ndo_vflag >= 1) {
+			if (etag) {
+				uint8_t code = *etag & 0xff;
+				ND_PRINT((ndo, "(%d:%s)", code, lcode_name(code)));
+			} else {
+				uint8_t code = (tag >> 17) & 0x3;
+				ND_PRINT((ndo, "(%d:%s)", code, code_name(code)));
+			}
+		}
+
+		if (etag)
+			port += (*etag & (1 << 10)) ? (1 << 5) : 0;
+		break;
+
+	case DSA_TO_SNIFFER:
+		ND_PRINT((ndo, "to_sniff"));
+		break;
+
+	case DSA_FROM_CPU:
+		ND_PRINT((ndo, "from_cpu"));
+		break;
+
+	case DSA_FORWARD:
+		ND_PRINT((ndo, " forward"));
+		if (ndo->ndo_vflag)
+			ND_PRINT((ndo, (tag & 0x00040000)? "(trunk)" : "(port)"));
+
+		if (etag)
+			port += (*etag & (1 << 29)) ? (1 << 5) : 0;
+		break;
+	}
+
+	ND_PRINT((ndo, " %d/%d:vlan%d-%c%s, ",
+		  (tag >> 24) &  0x1f, port,
+		  (tag >>  0) & 0xfff, (tag & 0x20000000) ? 't' : 'u',
+		  (((tag >> 30) == DSA_TO_SNIFFER)?
+		   ((tag & 0x00040000)? " (rx)":" (tx)") : "")));
+}
 
 static inline void
 ether_hdr_print(netdissect_options *ndo,
@@ -100,6 +293,10 @@ ether_hdr_print(netdissect_options *ndo,
 		     etheraddr_string(ndo, EDST(ep))));
 
 	ether_type = EXTRACT_16BITS(&ep->ether_type);
+	if ((ndo->ndo_packettype == PT_DSA) ||
+	    (ndo->ndo_packettype == PT_DSA_RT))
+		ether_type = EXTRACT_16BITS(&bp[DSA_HDRLEN]);
+
 	if (!ndo->ndo_qflag) {
 	        if (ether_type <= ETHERMTU)
 		          ND_PRINT((ndo, ", 802.3"));
@@ -133,6 +330,13 @@ ether_print(netdissect_options *ndo,
 	u_short ether_type;
 	u_short extracted_ether_type;
 
+	/* skip DSA router header  */
+	if (ndo->ndo_packettype == PT_DSA_RT) {
+		length -= 2;
+		caplen -= 2;
+		p += 2;
+	}
+
 	if (caplen < ETHER_HDRLEN || length < ETHER_HDRLEN) {
 		ND_PRINT((ndo, "[|ether]"));
 		return;
@@ -151,6 +355,41 @@ ether_print(netdissect_options *ndo,
 	p += ETHER_HDRLEN;
 
 	ether_type = EXTRACT_16BITS(&ep->ether_type);
+
+	if ((ether_type == ETHERTYPE_DSA) ||
+	    (ndo->ndo_packettype == PT_DSA) ||
+	    (ndo->ndo_packettype == PT_DSA_RT))
+        {
+           u_int32_t tag, etag = 0;
+           int taglen = 4;
+
+           if (ether_type == ETHERTYPE_DSA)
+              tag = EXTRACT_32BITS((p + 2));
+           else
+              tag = EXTRACT_32BITS(&p[12 - ETHER_HDRLEN]);
+
+	   if (caplen < DSA_HDRLEN || length < DSA_HDRLEN) {
+		   ND_PRINT((ndo, "[|dsa]"));
+		   return;
+	   }
+
+	   /* tag is extended if cpu-code is 0xf in TO_CPU, or if
+	    * bit 12 is set in any other tag. */
+	   if ((((tag >> 30) == DSA_TO_CPU) &&
+		(tag & 0x00071000 == 0x00071000)) ||
+	       (tag & (1 << 12))) {
+		   taglen += 4;
+		   etag = EXTRACT_32BITS(&p[16 - ETHER_HDRLEN]);
+		   dsa_print(ndo, tag, &etag);
+	   } else {
+		   dsa_print(ndo, tag, NULL);
+	   }
+
+	   ether_type = EXTRACT_16BITS(&p[12 - ETHER_HDRLEN + taglen]);
+	   p += taglen;
+	   length -= taglen;
+	   caplen -= taglen;
+	}
 
 recurse:
 	/*

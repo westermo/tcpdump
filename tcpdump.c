@@ -1247,6 +1247,10 @@ main(int argc, char **argv)
 				packettype = PT_PGM_ZMTP1;
 			else if (strcasecmp(optarg, "lmp") == 0)
 				packettype = PT_LMP;
+			else if (strcasecmp(optarg, "dsa") == 0)
+				packettype = PT_DSA;
+			else if (strcasecmp(optarg, "dsa-rt") == 0)
+				packettype = PT_DSA_RT;
 			else
 				error("unknown packet type `%s'", optarg);
 			break;
@@ -2500,8 +2504,47 @@ print_version(void)
 USES_APPLE_RST
 
 static void
+dsa_usage(void)
+{
+	(void)fprintf(stderr,
+		      "Usage for Marvell DSA devices:\n"
+		      "-T dsa     Assume that frames on the interface are DSA tagged,\n"
+		      "           print basic information such as tag type, src/dst\n"
+		      "           device/port and vlan.\n"
+		      "-T dsa-rt  As above, but assume a 2-byte router header before\n"
+		      "           packet data."
+		      "-v         Print the cpu-code in TO_CPU frames.\n"
+		      "-vv        Print the raw DSA tag.\n"
+		      "\n"
+		      "Regular DSA tags and Extended DSA tags are supported.\n"
+		      "\n"
+		      "Output format:\n"
+		      "<TYPE> <DEV>/<PORT>:vlan<VID>-<TAG>\n"
+		      "\n"
+		      "<TYPE> One of to_cpu, from_cpu, forward or to_sniffer.\n"
+		      "<DEV>  Physical switch id.\n"
+		      "<PORT> Physical port number.\n"
+		      "<VID>  Assigned 802.1Q VLAN id.\n"
+		      "<TAG>  Either t for a tagged, or u for an untagged packet.\n"
+		      "\n"
+		      "Legend for cpu-code abbreviations:\n"
+		      "f  Forwarded packet.\n"
+		      "m  Mirrored packet.\n"
+		      "t  Trapped packet.\n"
+		      "x  Packet from another CPU.\n"
+		      "\n"
+		      "br Bridge module.\n"
+		      "rt Routing module.\n"
+		      "\n"
+		      "!  Logical not, i.e !ipv4-bc means broadcast that is not ipv4.\n");
+}
+
+static void
 print_usage(void)
 {
+	if ((packettype == PT_DSA) || (packettype == PT_DSA_RT))
+		return dsa_usage();
+
 	print_version();
 	(void)fprintf(stderr,
 "Usage: %s [-aAbd" D_FLAG "efhH" I_FLAG J_FLAG "KlLnNOpqRStu" U_FLAG "vxX#]" B_FLAG_USAGE " [ -c count ]\n", program_name);
@@ -2525,6 +2568,8 @@ print_usage(void)
 "\t\t[ -w file ] [ -W filecount ] [ -y datalinktype ] [ -z command ]\n");
 	(void)fprintf(stderr,
 "\t\t[ -Z user ] [ expression ]\n");
+
+	(void)fprintf(stderr, "DSA help, run: tcpdump -Tdsa -h\n");
 }
 
 
