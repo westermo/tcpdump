@@ -51,6 +51,7 @@ const struct tok oui_values[] = {
     { OUI_BROADCOM, "Broadcom" },
     { OUI_PMC_SIERRA, "PMC-Sierra" },
     { OUI_ERICSSON, "Ericsson" },
+    { OUI_WESTERMO, "Westermo" },
     { 0, NULL }
 };
 

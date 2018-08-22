@@ -43,6 +43,7 @@ extern const struct tok smi_values[];
 #define OUI_BROADCOM          0x001018  /* Broadcom */
 #define OUI_PMC_SIERRA        0x00e004  /* PMC-Sierra */
 #define OUI_ERICSSON          0xd0f0db  /* Ericsson */
+#define OUI_WESTERMO          0x00077c  /* Westermo */
 
 /*
  * These are SMI Network Management Private Enterprise Codes for
