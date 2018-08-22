@@ -39,6 +39,7 @@ const struct tok oui_values[] = {
     { OUI_IEEE_8023_PRIVATE, "IEEE 802.3 Private"},
     { OUI_TIA, "ANSI/TIA"},
     { OUI_DCBX, "DCBX"},
+    { OUI_WESTERMO, "Westermo" },
     { 0, NULL }
 };
 
