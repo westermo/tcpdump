@@ -98,6 +98,9 @@
 #ifndef ETHERTYPE_AARP
 #define ETHERTYPE_AARP		0x80f3
 #endif
+#ifndef ETHERTYPE_OUIEXT
+#define ETHERTYPE_OUIEXT	0x88b7
+#endif
 #ifndef	ETHERTYPE_TIPC
 #define	ETHERTYPE_TIPC		0x88ca
 #endif

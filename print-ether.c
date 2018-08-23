@@ -85,6 +85,7 @@ const struct tok ethertype_values[] = {
     { ETHERTYPE_CFM,            "CFM" },
     { ETHERTYPE_IEEE1905_1,     "IEEE1905.1" },
     { ETHERTYPE_LLDP,           "LLDP" },
+    { ETHERTYPE_OUIEXT,         "OUI Extended"},
     { ETHERTYPE_TIPC,           "TIPC"},
     { ETHERTYPE_GEONET_OLD,     "GeoNet (old)"},
     { ETHERTYPE_GEONET,         "GeoNet"},
@@ -645,6 +646,10 @@ ethertype_print(netdissect_options *ndo,
 	case ETHERTYPE_MPLS:
 	case ETHERTYPE_MPLS_MULTI:
 		mpls_print(ndo, p, length);
+		return (1);
+
+	case ETHERTYPE_OUIEXT:
+		snap_print(ndo, p, length, caplen, 0);
 		return (1);
 
 	case ETHERTYPE_TIPC:
