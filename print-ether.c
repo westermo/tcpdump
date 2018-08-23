@@ -397,6 +397,9 @@ recurse:
 	 * Is it (gag) an 802.3 encapsulation?
 	 */
 	if (ether_type <= ETHERMTU) {
+		if (wmo_frntv0_print(ndo, (u_char *)ep, p, length) != 0)
+			return;
+
 		/* Try to print the LLC-layer header & higher layers */
 		if (llc_print(ndo, p, length, caplen, ESRC(ep), EDST(ep),
 		    &extracted_ether_type) == 0) {

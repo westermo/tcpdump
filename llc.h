@@ -120,3 +120,9 @@
 #define PID_RFC2684_802_6_FCS	0x0005	/* 802.6, with FCS */
 #define PID_RFC2684_802_6_NOFCS	0x000b	/* 802.6, without FCS */
 #define PID_RFC2684_BPDU	0x000e	/* BPDUs */
+
+/*
+ * PIDs for use with OUI_WESTERMO.
+ */
+#define PID_WESTERMO_FRNT	0x0001	/* Fast Reconfiguration Network Topology */
+#define PID_WESTERMO_RICO	0x0002	/* Ring Coupling */

@@ -608,4 +608,7 @@ extern int esp_print_decrypt_buffer_by_ikev2(netdissect_options *ndo,
 extern void geonet_print(netdissect_options *ndo,const u_char *eth_hdr,const u_char *geo_pck, u_int len);
 extern void calm_fast_print(netdissect_options *ndo,const u_char *eth_hdr,const u_char *calm_pck, u_int len);
 
+extern int wmo_frntv0_print(netdissect_options *, const u_char *, const u_char *, u_int);
+extern int wmo_snap_print(netdissect_options *, u_short, const u_char *, u_int);
+
 #endif  /* netdissect_h */

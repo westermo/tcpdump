@@ -119,6 +119,11 @@ static const struct tok bridged_values[] = {
 	{ 0,                       NULL },
 };
 
+static const struct tok wmo_values[] = {
+	{ PID_WESTERMO_FRNT, "FRNT" },
+	{ PID_WESTERMO_RICO, "RiCo" },
+};
+
 static const struct tok null_values[] = {
 	{ 0,             NULL }
 };
@@ -134,6 +139,7 @@ static const struct oui_tok oui_to_tok[] = {
 	{ OUI_APPLETALK, ethertype_values },	/* uses some Ethertype values */
 	{ OUI_CISCO, cisco_values },
 	{ OUI_RFC2684, bridged_values },	/* bridged, RFC 2427 FR or RFC 2864 ATM */
+	{ OUI_WESTERMO, wmo_values },
 	{ 0, NULL }
 };
 
@@ -514,6 +520,9 @@ snap_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 			stp_print(ndo, p, length);
 			return (1);
 		}
+
+	case OUI_WESTERMO:
+		return wmo_snap_print(ndo, et, p, length);
 	}
 	return (0);
 

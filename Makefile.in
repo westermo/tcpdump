@@ -206,6 +206,7 @@ LIBNETDISSECT_SRC=\
 	print-vtp.c \
 	print-vxlan.c \
 	print-wb.c \
+	print-wmo.c \
 	print-zephyr.c \
 	print-zeromq.c \
 	signature.c \
