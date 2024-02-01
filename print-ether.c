@@ -151,6 +151,7 @@ ether_common_print(netdissect_options *ndo, const u_char *p, u_int length,
 	int printed_length;
 	int llc_hdrlen;
 	struct lladdr_info src, dst;
+	int prp_suffix;
 
 	if (caplen < ETHER_HDRLEN + switch_tag_len) {
 		nd_print_trunc(ndo);
@@ -303,6 +304,13 @@ recurse:
 		length -= 6;
 		caplen -= 6;
 		hdrlen += 6;
+	}
+
+	if (caplen >= 6) {
+		prp_suffix = GET_BE_U_2(p + caplen - 2);
+		if (prp_suffix == 0x88fb) {
+			prp_print(ndo, p, caplen);
+		}
 	}
 
 	/*
