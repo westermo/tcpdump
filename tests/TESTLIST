@@ -839,4 +839,4 @@ lsp-ping-timestamp	lsp-ping-timestamp.pcap		lsp-ping-timestamp.out	-vv
 
 # HSR/PRP tests
 hsr		hsr.pcap	hsr.out		-e
-prp		prp.pcap	prp.out		-e
+prp		prp.pcap	prp.out		-e -P
